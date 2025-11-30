@@ -283,12 +283,12 @@ async function handleRequest(request) {
   // 修复特定的嵌套URL模式 - 直接移除嵌套URL部分
   // 匹配 /xxx/xxx/latest-commit/main/https%3A%2F%2Fgh.xxx.xxx/ 或 /xxx/xxx/tree-commit-info/main/https%3A%2F%2Fgh.xxx.xxx/
   pathname = pathname.replace(
-    /(\/[^\/]+\/[^\/]+\/(?:latest-commit|tree-commit-info)\/[^\/]+)\/https%3A(?:%2F%2F|\/\/)[^\/]+\/.*/,
+    /(\/[^\/]+\/[^\/]+\/(?:latest-commit|tree-commit-info|commits)\/[^\/]+)\/https%3A(?:%2F%2F|\/\/)[^\/]+\/.*/,
     '$1'
   );
   // 同样处理非编码版本
   pathname = pathname.replace(
-    /(\/[^\/]+\/[^\/]+\/(?:latest-commit|tree-commit-info)\/[^\/]+)\/https:\/\/[^\/]+\/.*/,
+    /(\/[^\/]+\/[^\/]+\/(?:latest-commit|tree-commit-info|commits)\/[^\/]+)\/https:\/\/[^\/]+\/.*/,
     '$1'
   );
 
