@@ -12,7 +12,7 @@ and is licensed under the GNU Affero General Public License v3.0.
 
 ## 特性
 
-- **添加敏感接口重定向**：添加 403 提示作为敏感接口（登录/注册）的重定向页面，避免风险信
+- **添加敏感接口重定向**：添加 403 提示作为敏感接口（登录/注册）的重定向页面，避免风险扫描
 - **修复页面嵌套等问题**：修复了前端部分页面嵌套及HTML头部不完善等问题
 
 - **子域名匹配系统**：使用 `gh.` 前缀作为GitHub的代理入口，支持任何域名后缀
@@ -75,8 +75,8 @@ and is licensed under the GNU Affero General Public License v3.0.
    - 例如：创建 `gh.您的域名` 的CNAME记录，指向您的Worker路由
 
 4. **配置Worker自定义域**
-   - 添加自定义域如 `gh.您的域名` 指向您的Worker
-   - 对其他代理子域重复此操作
+   - 在Worker中添加自定义域如 `gh.您的域名`
+   - 对其他代理子域重复此操作（目前主要域名+其他域名：共18个）
 
 ### 配置自定义域名
 
