@@ -281,10 +281,16 @@ async function handleRequest(request) {
   // 直接使用正则表达式处理最常见的嵌套URL问题
   let pathname = url.pathname;
   // 修复特定的嵌套URL模式 - 直接移除嵌套URL部分
-  // 匹配 /xxx/xxx/latest-commit/main/https%3A//gh.xxx.xxx/ 或 /xxx/xxx/tree-commit-info/main/https%3A//gh.xxx.xxx/
-  pathname = pathname.replace(/(\/[^\/]+\/[^\/]+\/(?:latest-commit|tree-commit-info)\/[^\/]+)\/https%3A\/\/[^\/]+\/.*/, '$1');
+  // 匹配 /xxx/xxx/latest-commit/main/https%3A%2F%2Fgh.xxx.xxx/ 或 /xxx/xxx/tree-commit-info/main/https%3A%2F%2Fgh.xxx.xxx/
+  pathname = pathname.replace(
+    /(\/[^\/]+\/[^\/]+\/(?:latest-commit|tree-commit-info)\/[^\/]+)\/https%3A(?:%2F%2F|\/\/)[^\/]+\/.*/,
+    '$1'
+  );
   // 同样处理非编码版本
-  pathname = pathname.replace(/(\/[^\/]+\/[^\/]+\/(?:latest-commit|tree-commit-info)\/[^\/]+)\/https:\/\/[^\/]+\/.*/, '$1');
+  pathname = pathname.replace(
+    /(\/[^\/]+\/[^\/]+\/(?:latest-commit|tree-commit-info)\/[^\/]+)\/https:\/\/[^\/]+\/.*/,
+    '$1'
+  );
 
   // 构建新的请求URL
   const new_url = new URL(url);
@@ -311,47 +317,47 @@ async function handleRequest(request) {
   //   new_headers.delete('cookie');
   // }
 
-// ===== 构造“白名单 + 片段请求头”，并还原 referer =====
-const new_headers = new Headers();
+  // ===== 构造“白名单 + 片段请求头”，并还原 referer =====
+  const new_headers = new Headers();
 
-// 允许的常规头
-const allowList = new Set([
-  'accept', 'accept-language', 'user-agent', 'cookie',
-  'range', 'if-none-match', 'if-modified-since', 'cache-control',
-  // key：片段 / PJAX / Turbo 请求需要的头，防止整页被当片段塞进来
-  'x-requested-with',        // XMLHttpRequest
-  'x-pjax',                  // PJAX
-  'x-pjax-container',        // PJAX container
-  'turbo-frame',             // Hotwire Turbo
-  'turbo-visit',             // Hotwire Turbo
-  'x-turbo-request-id'       // Turbo request id（如存在）
-]);
+  // 允许的常规头
+  const allowList = new Set([
+    'accept', 'accept-language', 'user-agent', 'cookie',
+    'range', 'if-none-match', 'if-modified-since', 'cache-control',
+    // key：片段 / PJAX / Turbo 请求需要的头，防止整页被当片段塞进来
+    'x-requested-with',        // XMLHttpRequest
+    'x-pjax',                  // PJAX
+    'x-pjax-container',        // PJAX container
+    'turbo-frame',             // Hotwire Turbo
+    'turbo-visit',             // Hotwire Turbo
+    'x-turbo-request-id'       // Turbo request id（如存在）
+  ]);
 
-// 复制请求头：允许 allowList 里的；允许其它 x-*，但排除 x-forwarded-*/x-real-ip
-for (const [k, v] of request.headers) {
-  const lk = k.toLowerCase();
-  if (
-    allowList.has(lk) ||
-    (lk.startsWith('x-') &&
-     !lk.startsWith('x-forwarded-') &&
-     lk !== 'x-real-ip' &&
-     lk !== 'x-forwarded-proto' &&
-     lk !== 'x-forwarded-for')
-  ) {
-    new_headers.set(k, v);
+  // 复制请求头：允许 allowList 里的；允许其它 x-*，但排除 x-forwarded-*/x-real-ip
+  for (const [k, v] of request.headers) {
+    const lk = k.toLowerCase();
+    if (
+      allowList.has(lk) ||
+      (lk.startsWith('x-') &&
+        !lk.startsWith('x-forwarded-') &&
+        lk !== 'x-real-ip' &&
+        lk !== 'x-forwarded-proto' &&
+        lk !== 'x-forwarded-for')
+    ) {
+      new_headers.set(k, v);
+    }
   }
-}
 
-// 还原 referer 到原站域名（key）
-const incomingRef = request.headers.get('referer');
-if (incomingRef) new_headers.set('referer', toOriginURL(incomingRef));
+  // 还原 referer 到原站域名（key）
+  const incomingRef = request.headers.get('referer');
+  if (incomingRef) new_headers.set('referer', toOriginURL(incomingRef));
 
-// 对 githubassets 兜底：固定安全 Referer 且去掉 Cookie
-if (target_host === 'github.githubassets.com') {
-  new_headers.set('referer', 'https://github.com/');
-  new_headers.delete('cookie');
-}
-// 不要手动设置 Host；fetch 会按 URL 自动带上
+  // 对 githubassets 兜底：固定安全 Referer 且去掉 Cookie
+  if (target_host === 'github.githubassets.com') {
+    new_headers.set('referer', 'https://github.com/');
+    new_headers.delete('cookie');
+  }
+  // 不要手动设置 Host；fetch 会按 URL 自动带上
 
   try {
     // 发起请求
@@ -442,8 +448,13 @@ function toOriginURL(urlStr) {
 async function modifyResponse(response, host_prefix, effective_hostname) {
   // 只处理文本内容
   const content_type = response.headers.get('content-type') || '';
-  if (!content_type.includes('text/') && !content_type.includes('application/json') && 
-      !content_type.includes('application/javascript') && !content_type.includes('application/xml')) {
+  if (
+    !content_type.includes('text/') &&
+    !content_type.includes('application/json') &&
+    !content_type.includes('application/javascript') &&
+    !content_type.includes('application/xml') &&
+    !content_type.includes('image/svg+xml')
+  ) {
     return response.body;
   }
 
