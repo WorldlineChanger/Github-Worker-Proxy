@@ -1,0 +1,2 @@
+# Github-Worker-Proxy
+基于Cloudflare Workers的GitHub代理服务，允许通过替代域名访问GitHub资源，解决某些网络环境下GitHub访问受限的问题。代理服务通过域名映射和资源转发，提供无缝的GitHub浏览体验。（基于 afoim/GithubSiteProxyForCloudflareWorker）
